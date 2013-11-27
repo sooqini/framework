@@ -83,7 +83,7 @@ class ControllerInspector {
 	{
 		$verb = $this->getVerb($name = $method->name);
 
-		$uri = $this->addUriWildcards($plain = $this->getPlainUri($name, $prefix));
+        $uri = $this->addUriParameters($plain = $this->getPlainUri($name, $prefix), $method->getParameters());
 
 		return compact('verb', 'plain', 'uri');
 	}
@@ -123,15 +123,34 @@ class ControllerInspector {
 		return $prefix.'/'.implode('-', array_slice(explode('_', snake_case($name)), 1));
 	}
 
-	/**
-	 * Add wildcards to the given URI.
-	 *
-	 * @param  string  $uri
-	 * @return string
-	 */
-	public function addUriWildcards($uri)
-	{
-		return $uri.'/{v1?}/{v2?}/{v3?}/{v4?}/{v5?}';
-	}
+    /**
+     * Add wildcards to the given URI.
+     *
+     * @param  string  $uri
+     * @return string
+     */
+    public function addUriWildcards($uri)
+    {
+        return $uri.'/{v1?}/{v2?}/{v3?}/{v4?}/{v5?}';
+    }
+
+    /**
+     * Determine and add named parameters to the given URI.
+     *
+     * @param  string  $uri
+     * @param  array  $parameters
+     * @return string
+     */
+    public function addUriParameters($uri, array $parameters)
+    {
+        foreach($parameters as $parameter) {
+            if($parameter->isOptional()) {
+                $uri .= '/{' . $parameter->name . '?}';
+            } else {
+                $uri .= '/{' . $parameter->name . '}';
+            }
+        }
+        return $uri;
+    }
 
 }
