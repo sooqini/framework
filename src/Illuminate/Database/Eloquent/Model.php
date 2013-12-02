@@ -2182,12 +2182,8 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	 */
 	public function getAttribute($key)
 	{
-		$inAttributes = array_key_exists($key, $this->attributes);
-
-		// If the key references an attribute, we can just go ahead and return the
-		// plain attribute value from the model. This allows every attribute to
-		// be dynamically accessed through the _get method without accessors.
-		if ($inAttributes || $this->hasGetMutator($key))
+		// If a get mutator exists for the key allow the mutator to return the value
+		if ($this->hasGetMutator($key))
 		{
 			return $this->getAttributeValue($key);
 		}
@@ -2208,6 +2204,16 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 		if (method_exists($this, $camelKey))
 		{
 			return $this->getRelationshipFromMethod($key, $camelKey);
+		}
+
+		$inAttributes = array_key_exists($key, $this->attributes);
+
+		// If the key references an attribute, we can just go ahead and return the
+		// plain attribute value from the model. This allows every attribute to
+		// be dynamically accessed through the _get method without accessors.
+		if ($inAttributes)
+		{
+			return $this->getAttributeValue($key);
 		}
 	}
 
