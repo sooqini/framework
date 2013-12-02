@@ -71,7 +71,7 @@ class BelongsTo extends Relation {
 			// of the related models matching on the foreign key that's on a parent.
 			$table = $this->related->getTable();
 
-			$this->query->where($table.'.'.$this->otherKey, '=', $this->parent->{$this->foreignKey});
+			$this->query->where($table.'.'.$this->otherKey, '=', $this->parent->getAttributeValue($this->foreignKey));
 		}
 	}
 

@@ -2217,7 +2217,7 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	 * @param  string  $key
 	 * @return mixed
 	 */
-	protected function getAttributeValue($key)
+	public function getAttributeValue($key)
 	{
 		$value = $this->getAttributeFromArray($key);
 
