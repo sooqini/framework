@@ -149,7 +149,7 @@ abstract class HasOneOrMany extends Relation {
 		// models without having to do nested looping which will be quite slow.
 		foreach ($results as $result)
 		{
-			$dictionary[$result->{$foreign}][] = $result;
+			$dictionary[$result->getAttributeValue($foreign)][] = $result;
 		}
 
 		return $dictionary;

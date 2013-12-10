@@ -119,7 +119,7 @@ class BelongsTo extends Relation {
 		// execute a "where in" statement to gather up all of those related records.
 		foreach ($models as $model)
 		{
-			if ( ! is_null($value = $model->{$this->foreignKey}))
+			if ( ! is_null($value = $model->getAttributeValue($this->foreignKey)))
 			{
 				$keys[] = $value;
 			}
