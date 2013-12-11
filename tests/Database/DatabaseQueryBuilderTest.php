@@ -86,7 +86,7 @@ class DatabaseQueryBuilderTest extends PHPUnit_Framework_TestCase {
 				->andReturn($taggedCache);
 
 		$query = $this->setupCacheTestQuery($cache);
-		$query = $query->tags(array('foo', 'bar'))->remember(5);
+		$query = $query->cacheTags(array('foo', 'bar'))->remember(5);
 
 		$taggedCache->shouldReceive('remember')
 						->once()

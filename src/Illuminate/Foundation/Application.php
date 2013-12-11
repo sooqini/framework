@@ -26,7 +26,7 @@ class Application extends Container implements HttpKernelInterface, TerminableIn
 	 *
 	 * @var string
 	 */
-	const VERSION = '4.1-dev';
+	const VERSION = '4.2-dev';
 
 	/**
 	 * Indicates if the application has "booted".
@@ -643,11 +643,20 @@ class Application extends Container implements HttpKernelInterface, TerminableIn
 	 */
 	public function handle(SymfonyRequest $request, $type = HttpKernelInterface::MASTER_REQUEST, $catch = true)
 	{
-		$this->refreshRequest($request = Request::createFromBase($request));
+		try
+		{
+			$this->refreshRequest($request = Request::createFromBase($request));
 
-		$this->boot();
+			$this->boot();
 
-		return $this->dispatch($request);
+			return $this->dispatch($request);
+		}
+		catch (\Exception $e)
+		{
+			if ($this->runningUnitTests()) throw $e;
+
+			return $this['exception']->handleException($e);
+		}
 	}
 
 	/**
@@ -750,6 +759,16 @@ class Application extends Container implements HttpKernelInterface, TerminableIn
 		if ( ! $value instanceof SymfonyResponse) $value = new Response($value);
 
 		return $value->prepare($this['request']);
+	}
+
+	/**
+	 * Determine if the application is ready for responses.
+	 *
+	 * @return bool
+	 */
+	public function readyForResponses()
+	{
+		return $this->booted;
 	}
 
 	/**

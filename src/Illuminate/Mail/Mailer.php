@@ -54,6 +54,13 @@ class Mailer {
 	protected $pretending = false;
 
 	/**
+	 * Array of failed recipients.
+	 *
+	 * @var array
+	 */
+	protected $failedRecipients = array();
+
+	/**
 	 * Create a new Mailer instance.
 	 *
 	 * @param  \Illuminate\View\Environment  $views
@@ -276,7 +283,7 @@ class Mailer {
 				array_get($view, 'html'), array_get($view, 'text')
 			);
 		}
-		
+
 		throw new \InvalidArgumentException("Invalid view.");
 	}
 
@@ -290,11 +297,13 @@ class Mailer {
 	{
 		if ( ! $this->pretending)
 		{
-			return $this->swift->send($message);
+			return $this->swift->send($message, $this->failedRecipients);
 		}
 		elseif (isset($this->logger))
 		{
 			$this->logMessage($message);
+
+			return 1;
 		}
 	}
 
@@ -395,6 +404,16 @@ class Mailer {
 	public function getSwiftMailer()
 	{
 		return $this->swift;
+	}
+
+	/**
+	 * Get the array of failed recipients.
+	 *
+	 * @return array
+	 */
+	public function failures()
+	{
+		return $this->failedRecipients;
 	}
 
 	/**
