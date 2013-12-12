@@ -394,7 +394,7 @@ class BelongsToMany extends Relation {
 
 		foreach ($results as $result)
 		{
-			$dictionary[$result->pivot->$foreign][] = $result;
+			$dictionary[$result->pivot->getAttributeValue($foreign)][] = $result;
 		}
 
 		return $dictionary;

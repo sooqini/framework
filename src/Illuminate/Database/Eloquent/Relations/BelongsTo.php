@@ -182,9 +182,9 @@ class BelongsTo extends Relation {
 		// the primary key of the children to map them onto the correct instances.
 		foreach ($models as $model)
 		{
-			if (isset($dictionary[$model->$foreign]))
+			if (isset($dictionary[$model->getAttributeValue($foreign)]))
 			{
-				$model->setRelation($relation, $dictionary[$model->$foreign]);
+				$model->setRelation($relation, $dictionary[$model->getAttributeValue($foreign)]);
 			}
 		}
 
