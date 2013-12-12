@@ -35,7 +35,7 @@ class RoutingUrlGeneratorTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertEquals('http://www.foo.com/foo/bar', $url->asset('foo/bar'));
 		$this->assertEquals('https://www.foo.com/foo/bar', $url->asset('foo/bar', true));
-	}	
+	}
 
 
 	public function testBasicRouteGeneration()
@@ -70,15 +70,32 @@ class RoutingUrlGeneratorTest extends PHPUnit_Framework_TestCase {
 		$routes->add($route);
 
 		$this->assertEquals('http://www.foo.com/foo/bar', $url->route('foo'));
-		$this->assertEquals('http://www.foo.com/foo/bar/taylor/breeze/otwell', $url->route('bar', array('taylor', 'otwell')));
+		$this->assertEquals('http://www.foo.com/foo/bar/taylor/breeze/otwell?fly=wall', $url->route('bar', array('taylor', 'otwell', 'fly' => 'wall')));
 		$this->assertEquals('https://www.foo.com/foo/bar', $url->route('baz'));
 		$this->assertEquals('http://www.foo.com/foo/bar', $url->action('foo@bar'));
 	}
 
 
+	public function testRoutesMaintainRequestScheme()
+	{
+		$url = new UrlGenerator(
+			$routes = new Illuminate\Routing\RouteCollection,
+			$request = Illuminate\Http\Request::create('https://www.foo.com/')
+		);
+
+		/**
+		 * Named Routes
+		 */
+		$route = new Illuminate\Routing\Route(array('GET'), 'foo/bar', array('as' => 'foo'));
+		$routes->add($route);
+
+		$this->assertEquals('https://www.foo.com/foo/bar', $url->route('foo'));
+	}
+
+
 	public function testRoutesWithDomains()
 	{
-			$url = new UrlGenerator(
+		$url = new UrlGenerator(
 			$routes = new Illuminate\Routing\RouteCollection,
 			$request = Illuminate\Http\Request::create('http://www.foo.com/')
 		);
@@ -116,5 +133,34 @@ class RoutingUrlGeneratorTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals('http://sub.foo.com:8080/foo/bar', $url->route('foo'));
 		$this->assertEquals('http://sub.taylor.com:8080/foo/bar/otwell', $url->route('bar', array('taylor', 'otwell')));
 	}
+
+
+        public function testGenerateWithQueryStrings()
+        {
+                $url = new UrlGenerator(
+                        $routes = new Illuminate\Routing\RouteCollection,
+                        $request = Illuminate\Http\Request::create('http://www.foo.com/')
+                );
+
+                $route = new Illuminate\Routing\Route(array('GET'), 'foo/{param}/{opt?}', array('as' => 'foo'));
+                $routes->add($route);
+
+                $this->assertEquals('http://www.foo.com/foo/param/opt?foo=bar&baz', $url->route('foo', array('param', 'opt', 'foo' => 'bar', 'baz')));
+                $this->assertEquals('http://www.foo.com/foo/param/opt?foo=bar&baz', $url->route('foo', array('param' => 'param', 'opt' => 'opt', 'foo' => 'bar', 'baz')));
+
+
+                $url = new UrlGenerator(
+                        $routes = new Illuminate\Routing\RouteCollection,
+                        $request = Illuminate\Http\Request::create('http://www.foo.com/')
+                );
+
+                $fooRoute = new Illuminate\Routing\Route(array('GET'), 'foo/{param}', array('as' => 'foo'));
+                $routes->add($fooRoute);
+                $barRoute = new Illuminate\Routing\Route(array('GET'), 'bar', array('as' => 'bar'));
+                $routes->add($barRoute);
+
+                $this->assertEquals('http://www.foo.com/foo/param', $url->route('foo', 'param'));
+                $this->assertEquals('http://www.foo.com/bar?param', $url->route('bar', 'param'));
+        }
 
 }

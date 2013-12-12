@@ -29,15 +29,33 @@ class ViewTest extends PHPUnit_Framework_TestCase {
 	public function testRenderProperlyRendersView()
 	{
 		$view = $this->getView();
-		$view->getEnvironment()->shouldReceive('incrementRender')->once();
-		$view->getEnvironment()->shouldReceive('callComposer')->once()->with($view);
+		$view->getEnvironment()->shouldReceive('incrementRender')->once()->ordered();
+		$view->getEnvironment()->shouldReceive('callComposer')->once()->ordered()->with($view);
 		$view->getEnvironment()->shouldReceive('getShared')->once()->andReturn(array('shared' => 'foo'));
 		$view->getEngine()->shouldReceive('get')->once()->with('path', array('foo' => 'bar', 'shared' => 'foo'))->andReturn('contents');
-		$view->getEnvironment()->shouldReceive('decrementRender')->once();
-		$view->getEnvironment()->shouldReceive('doneRendering')->once()->andReturn(true);
-		$view->getEnvironment()->shouldReceive('flushSections')->once();
+		$view->getEnvironment()->shouldReceive('decrementRender')->once()->ordered();
+		$view->getEnvironment()->shouldReceive('flushSectionsIfDoneRendering')->once();
 
-		$this->assertEquals('contents', $view->render());
+		$me = $this;
+		$callback = function(View $rendered, $contents) use ($me, $view)
+		{
+			$me->assertEquals($view, $rendered);
+			$me->assertEquals('contents', $contents);
+		};
+
+		$this->assertEquals('contents', $view->render($callback));
+	}
+
+
+	public function testRenderSectionsReturnsEnvironmentSections()
+	{
+		$view = m::mock('Illuminate\View\View[render]');
+		$view->__construct(m::mock('Illuminate\View\Environment'), m::mock('Illuminate\View\Engines\EngineInterface'), 'view', 'path', array());
+
+		$view->shouldReceive('render')->with(m::type('Closure'))->once()->andReturn($sections = array('foo' => 'bar'));
+		$view->getEnvironment()->shouldReceive('getSections')->once()->andReturn($sections);
+
+		$this->assertEquals($sections, $view->renderSections());
 	}
 
 
@@ -49,8 +67,7 @@ class ViewTest extends PHPUnit_Framework_TestCase {
 		$view->getEnvironment()->shouldReceive('getShared')->once()->andReturn(array('shared' => 'foo'));
 		$view->getEngine()->shouldReceive('get')->once()->with('path', array('foo' => 'bar', 'shared' => 'foo'))->andReturn('contents');
 		$view->getEnvironment()->shouldReceive('decrementRender')->once();
-		$view->getEnvironment()->shouldReceive('doneRendering')->once()->andReturn(false);
-		$view->getEnvironment()->shouldReceive('flushSections')->never();
+		$view->getEnvironment()->shouldReceive('flushSectionsIfDoneRendering')->once();
 
 		$this->assertEquals('contents', $view->render());
 	}

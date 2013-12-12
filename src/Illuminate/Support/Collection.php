@@ -97,11 +97,20 @@ class Collection implements ArrayAccess, ArrayableInterface, Countable, Iterator
 	/**
 	 * Get the first item from the collection.
 	 *
+	 * @param  \Closure   $callback
+	 * @param  mixed      $default
 	 * @return mixed|null
 	 */
-	public function first()
+	public function first(Closure $callback = null, $default = null)
 	{
-		return count($this->items) > 0 ? reset($this->items) : null;
+		if (is_null($callback))
+		{
+			return count($this->items) > 0 ? reset($this->items) : null;
+		}
+		else
+		{
+			return array_first($this->items, $callback, $default);
+		}
 	}
 
 	/**
@@ -244,9 +253,10 @@ class Collection implements ArrayAccess, ArrayableInterface, Countable, Iterator
 	 * Sort the collection using the given Closure.
 	 *
 	 * @param  \Closure  $callback
+	 * @param  int  $options
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function sortBy(Closure $callback)
+	public function sortBy(Closure $callback, $options = SORT_REGULAR)
 	{
 		$results = array();
 
@@ -258,7 +268,7 @@ class Collection implements ArrayAccess, ArrayableInterface, Countable, Iterator
 			$results[$key] = $callback($value);
 		}
 
-		asort($results);
+		asort($results, $options);
 
 		// Once we have sorted all of the keys in the array, we will loop through them
 		// and grab the corresponding model so we can set the underlying items list
@@ -582,7 +592,7 @@ class Collection implements ArrayAccess, ArrayableInterface, Countable, Iterator
 		}
 		elseif ($items instanceof ArrayableInterface)
 		{
-			$tiems = $items->toArray();
+			$items = $items->toArray();
 		}
 
 		return $items;

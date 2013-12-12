@@ -323,7 +323,11 @@ class Builder {
 	 */
 	public function where($column, $operator = null, $value = null, $boolean = 'and')
 	{
-		if ($this->invalidOperatorAndValue($operator, $value))
+		if (func_num_args() == 2)
+		{
+			list($value, $operator) = array($operator, '=');
+		}
+		elseif ($this->invalidOperatorAndValue($operator, $value))
 		{
 			throw new \InvalidArgumentException("Value must be provided.");
 		}
@@ -1101,7 +1105,7 @@ class Builder {
 	 * @param  array|dynamic  $cacheTags
 	 * @return \Illuminate\Database\Query\Builder|static
 	 */
-	public function tags($cacheTags)
+	public function cacheTags($cacheTags)
 	{
 		$this->cacheTags = $cacheTags;
 
