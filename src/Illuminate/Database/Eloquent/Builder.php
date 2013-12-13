@@ -63,7 +63,7 @@ class Builder {
 		    return $this->findMany($id, $columns);
 		}
 
-		$this->query->where($this->model->getKeyName(), '=', $id);
+		$this->query->where("{$this->model->getTable()}.{$this->model->getKeyName()}", '=', $id);
 
 		return $this->first($columns);
 	}
