@@ -46,6 +46,12 @@ class RoutingUrlGeneratorTest extends PHPUnit_Framework_TestCase {
 		);
 
 		/**
+		 * Empty Named Route
+		 */
+		$route = new Illuminate\Routing\Route(array('GET'), '/', array('as' => 'plain'));
+		$routes->add($route);
+
+		/**
 		 * Named Routes
 		 */
 		$route = new Illuminate\Routing\Route(array('GET'), 'foo/bar', array('as' => 'foo'));
@@ -69,8 +75,13 @@ class RoutingUrlGeneratorTest extends PHPUnit_Framework_TestCase {
 		$route = new Illuminate\Routing\Route(array('GET'), 'foo/bar', array('controller' => 'foo@bar'));
 		$routes->add($route);
 
+		$this->assertEquals('/', $url->route('plain', array(), false));
+		$this->assertEquals('/?foo=bar', $url->route('plain', array('foo' => 'bar'), false));
 		$this->assertEquals('http://www.foo.com/foo/bar', $url->route('foo'));
+		$this->assertEquals('/foo/bar', $url->route('foo', array(), false));
+		$this->assertEquals('/foo/bar?foo=bar', $url->route('foo', array('foo' => 'bar'), false));
 		$this->assertEquals('http://www.foo.com/foo/bar/taylor/breeze/otwell?fly=wall', $url->route('bar', array('taylor', 'otwell', 'fly' => 'wall')));
+		$this->assertEquals('/foo/bar/taylor/breeze/otwell?fly=wall', $url->route('bar', array('taylor', 'otwell', 'fly' => 'wall'), false));
 		$this->assertEquals('https://www.foo.com/foo/bar', $url->route('baz'));
 		$this->assertEquals('http://www.foo.com/foo/bar', $url->action('foo@bar'));
 	}
@@ -111,12 +122,13 @@ class RoutingUrlGeneratorTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertEquals('http://sub.foo.com/foo/bar', $url->route('foo'));
 		$this->assertEquals('http://sub.taylor.com/foo/bar/otwell', $url->route('bar', array('taylor', 'otwell')));
+		$this->assertEquals('/foo/bar/otwell', $url->route('bar', array('taylor', 'otwell'), false));
 	}
 
 
 	public function testRoutesWithDomainsAndPorts()
 	{
-			$url = new UrlGenerator(
+		$url = new UrlGenerator(
 			$routes = new Illuminate\Routing\RouteCollection,
 			$request = Illuminate\Http\Request::create('http://www.foo.com:8080/')
 		);
@@ -135,32 +147,17 @@ class RoutingUrlGeneratorTest extends PHPUnit_Framework_TestCase {
 	}
 
 
-        public function testGenerateWithQueryStrings()
-        {
-                $url = new UrlGenerator(
-                        $routes = new Illuminate\Routing\RouteCollection,
-                        $request = Illuminate\Http\Request::create('http://www.foo.com/')
-                );
+	public function testUrlGenerationForControllers()
+	{
+		$url = new UrlGenerator(
+			$routes = new Illuminate\Routing\RouteCollection,
+			$request = Illuminate\Http\Request::create('http://www.foo.com:8080/')
+		);
 
-                $route = new Illuminate\Routing\Route(array('GET'), 'foo/{param}/{opt?}', array('as' => 'foo'));
-                $routes->add($route);
+		$route = new Illuminate\Routing\Route(array('GET'), 'foo/{one}/{two?}/{three?}', array('as' => 'foo', function() {}));
+		$routes->add($route);
 
-                $this->assertEquals('http://www.foo.com/foo/param/opt?foo=bar&baz', $url->route('foo', array('param', 'opt', 'foo' => 'bar', 'baz')));
-                $this->assertEquals('http://www.foo.com/foo/param/opt?foo=bar&baz', $url->route('foo', array('param' => 'param', 'opt' => 'opt', 'foo' => 'bar', 'baz')));
-
-
-                $url = new UrlGenerator(
-                        $routes = new Illuminate\Routing\RouteCollection,
-                        $request = Illuminate\Http\Request::create('http://www.foo.com/')
-                );
-
-                $fooRoute = new Illuminate\Routing\Route(array('GET'), 'foo/{param}', array('as' => 'foo'));
-                $routes->add($fooRoute);
-                $barRoute = new Illuminate\Routing\Route(array('GET'), 'bar', array('as' => 'bar'));
-                $routes->add($barRoute);
-
-                $this->assertEquals('http://www.foo.com/foo/param', $url->route('foo', 'param'));
-                $this->assertEquals('http://www.foo.com/bar?param', $url->route('bar', 'param'));
-        }
+		$this->assertEquals('http://www.foo.com:8080/foo', $url->route('foo'));
+	}
 
 }

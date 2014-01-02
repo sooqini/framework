@@ -1,6 +1,7 @@
 <?php namespace Illuminate\Validation;
 
 use Illuminate\Database\ConnectionResolverInterface;
+use Illuminate\Support\Str;
 
 class DatabasePresenceVerifier implements PresenceVerifierInterface {
 
@@ -42,16 +43,11 @@ class DatabasePresenceVerifier implements PresenceVerifierInterface {
 	 */
 	public function getCount($collection, $column, $value, $excludeId = null, $idColumn = null, array $extra = array())
 	{
-		$query = $this->table($collection)->where($column, '=', $value);
+		$query = $this->table($collection, $extra)->where($column, '=', $value);
 
 		if ( ! is_null($excludeId) && $excludeId != 'NULL')
 		{
 			$query->where($idColumn ?: 'id', '<>', $excludeId);
-		}
-
-		foreach ($extra as $key => $extraValue)
-		{
-			$query->where($key, $extraValue == 'NULL' ? null : $extraValue);
 		}
 
 		return $query->count();
@@ -68,25 +64,39 @@ class DatabasePresenceVerifier implements PresenceVerifierInterface {
 	 */
 	public function getMultiCount($collection, $column, array $values, array $extra = array())
 	{
-		$query = $this->table($collection)->whereIn($column, $values);
-
-		foreach ($extra as $key => $extraValue)
-		{
-			$query->where($key, $extraValue == 'NULL' ? null : $extraValue);
-		}
+		$query = $this->table($collection, $extra)->whereIn($column, $values);
 
 		return $query->count();
 	}
 
 	/**
-	 * Get a query builder for the given table.
+	 * Get a query builder for the given table with optional extra where clauses.
 	 *
 	 * @param  string  $table
+	 * @param  array  $extra
 	 * @return \Illuminate\Database\Query\Builder
 	 */
-	protected function table($table)
+	protected function table($table, array $extra = array())
 	{
-		return $this->db->connection($this->connection)->table($table);
+		$query = $this->db->connection($this->connection)->table($table);
+
+		foreach ($extra as $key => $extraValue)
+		{
+			switch(Str::upper($extraValue)) {
+				case 'NULL':
+					$query->whereNull($key);
+					break;
+				case 'NOTNULL':
+					$query->whereNotNull($key);
+					break;
+				default:
+					$query->where($key, $extraValue);
+					break;
+			}
+		}
+
+		return $query;
+
 	}
 
 	/**

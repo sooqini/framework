@@ -10,7 +10,7 @@ class ControllerInspector {
 	 * @var array
 	 */
 	protected $verbs = array(
-		'any', 'get', 'post', 'put', 
+		'any', 'get', 'post', 'put',
 		'delete', 'head', 'options'
 	);
 
@@ -123,16 +123,16 @@ class ControllerInspector {
 		return $prefix.'/'.implode('-', array_slice(explode('_', snake_case($name)), 1));
 	}
 
-    /**
-     * Add wildcards to the given URI.
-     *
-     * @param  string  $uri
-     * @return string
-     */
-    public function addUriWildcards($uri)
-    {
-        return $uri.'/{v1?}/{v2?}/{v3?}/{v4?}/{v5?}';
-    }
+	/**
+	 * Add wildcards to the given URI.
+	 *
+	 * @param  string  $uri
+	 * @return string
+	 */
+	public function addUriWildcards($uri)
+	{
+		return $uri.'/{one?}/{two?}/{three?}/{four?}/{five?}';
+	}
 
     /**
      * Determine and add named parameters to the given URI.

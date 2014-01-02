@@ -20,6 +20,24 @@ class UrlGenerator {
 	protected $request;
 
 	/**
+	 * Characters that should not be URL encoded.
+	 *
+	 * @var array
+	 */
+	protected $dontEncode = array(
+		'%2F' => '/',
+		'%40' => '@',
+		'%3A' => ':',
+		'%3B' => ';',
+		'%2C' => ',',
+		'%3D' => '=',
+		'%2B' => '+',
+		'%21' => '!',
+		'%2A' => '*',
+		'%7C' => '|',
+	);
+
+	/**
 	 * Create a new URL Generator instance.
 	 *
 	 * @param  \Illuminate\Routing\RouteCollection  $routes
@@ -168,12 +186,13 @@ class UrlGenerator {
 	 *
 	 * @param  string  $name
 	 * @param  mixed   $parameters
+	 * @param  bool  $absolute
 	 * @param  \Illuminate\Routing\Route  $route
 	 * @return string
 	 *
 	 * @throws \InvalidArgumentException
 	 */
-	public function route($name, $parameters = array(), $route = null)
+	public function route($name, $parameters = array(), $absolute = true, $route = null)
 	{
 		$route = $route ?: $this->routes->getByName($name);
 
@@ -181,7 +200,7 @@ class UrlGenerator {
 
 		if ( ! is_null($route))
 		{
-			return $this->toRoute($route, $parameters);
+			return $this->toRoute($route, $parameters, $absolute);
 		}
 		else
 		{
@@ -194,17 +213,32 @@ class UrlGenerator {
 	 *
 	 * @param  \Illuminate\Routing\Route  $route
 	 * @param  array  $parameters
+	 * @param  bool  $absolute
 	 * @return string
 	 */
-	protected function toRoute($route, array $parameters)
+	protected function toRoute($route, array $parameters, $absolute)
 	{
 		$domain = $this->getRouteDomain($route, $parameters);
 
-		return $this->replaceRouteParameters(
+		$uri = strtr(rawurlencode($this->trimUrl(
+			$root = $this->replaceRoot($route, $domain, $parameters),
+			$this->replaceRouteParameters($route->uri(), $parameters)
+		)), $this->dontEncode).$this->getRouteQueryString($parameters);
 
-			$this->trimUrl($this->getRouteRoot($route, $domain), $route->uri()), $parameters
+		return $absolute ? $uri : '/'.ltrim(str_replace($root, '', $uri), '/');
+	}
 
-		);
+	/**
+	 * Replace the parameters on the root path.
+	 *
+	 * @param  \Illuminate\Routing\Route  $route
+	 * @param  string  $domain
+	 * @param  array  $parameters
+	 * @return string
+	 */
+	protected function replaceRoot($route, $domain, &$parameters)
+	{
+		return $this->replaceRouteParameters($this->getRouteRoot($route, $domain), $parameters);
 	}
 
 	/**
@@ -214,14 +248,14 @@ class UrlGenerator {
 	 * @param  array  $parameters
 	 * @return string
 	 */
-	protected function replaceRouteParameters($path, array $parameters)
+	protected function replaceRouteParameters($path, array &$parameters)
 	{
 		foreach ($parameters as $key => $value)
 		{
 			$path = $this->replaceRouteParameter($path, $key, $value, $parameters);
 		}
 
-		return $path.$this->getRouteQueryString($parameters);
+		return trim(preg_replace('/\{.*?\?\}/', '', $path), '/');
 	}
 
 	/**
@@ -261,7 +295,7 @@ class UrlGenerator {
 
 		if (count($keyed) < count($parameters))
 		{
-			$query .= '&'.implode($this->getNumericParameters($parameters));
+			$query .= '&'.implode('&', $this->getNumericParameters($parameters));
 		}
 
 		return '?'.trim($query, '&');
@@ -364,7 +398,7 @@ class UrlGenerator {
 	 */
 	public function action($action, $parameters = array(), $absolute = true)
 	{
-		return $this->route($action, $parameters, $this->routes->getByAction($action));
+		return $this->route($action, $parameters, $absolute, $this->routes->getByAction($action));
 	}
 
 	/**

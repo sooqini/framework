@@ -580,6 +580,7 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	 * @param  string  $name
 	 * @param  string  $type
 	 * @param  string  $id
+	 * @param  string  $localKey
 	 * @return \Illuminate\Database\Eloquent\Relations\MorphOne
 	 */
 	public function morphOne($related, $name, $type = null, $id = null, $localKey = null)
@@ -637,7 +638,7 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	}
 
 	/**
-	 * Define an polymorphic, inverse one-to-one or many relationship.
+	 * Define a polymorphic, inverse one-to-one or many relationship.
 	 *
 	 * @param  string  $name
 	 * @param  string  $type
@@ -779,14 +780,14 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	}
 
 	/**
-	 * Define a many-to-many relationship.
+	 * Define a polymorphic many-to-many relationship.
 	 *
 	 * @param  string  $related
 	 * @param  string  $name
 	 * @param  string  $table
 	 * @param  string  $foreignKey
 	 * @param  string  $otherKey
-	 * @param  bool  $inverse
+	 * @param  bool    $inverse
 	 * @return \Illuminate\Database\Eloquent\Relations\MorphToMany
 	 */
 	public function morphToMany($related, $name, $table = null, $foreignKey = null, $otherKey = null, $inverse = false)
@@ -816,14 +817,13 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	}
 
 	/**
-	 * Define a many-to-many relationship.
+	 * Define a polymorphic, inverse many-to-many relationship.
 	 *
 	 * @param  string  $related
 	 * @param  string  $name
 	 * @param  string  $table
 	 * @param  string  $foreignKey
 	 * @param  string  $otherKey
-	 * @param  string  $morphClass
 	 * @return \Illuminate\Database\Eloquent\Relations\MorphToMany
 	 */
 	public function morphedByMany($related, $name, $table = null, $foreignKey = null, $otherKey = null)
@@ -884,10 +884,15 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	 * Destroy the models for the given IDs.
 	 *
 	 * @param  array|int  $ids
-	 * @return void
+	 * @return int
 	 */
 	public static function destroy($ids)
 	{
+		// We'll initialize a count here so we will return the total number of deletes
+		// for the operation. The developers can then check this number as a boolean
+		// type value or get this total count of records deleted for logging, etc.
+		$count = 0;
+
 		$ids = is_array($ids) ? $ids : func_get_args();
 
 		$instance = new static;
@@ -899,8 +904,10 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 
 		foreach ($instance->whereIn($key, $ids)->get() as $model)
 		{
-			$model->delete();
+			if ($model->delete()) $count++;
 		}
+
+		return $count;
 	}
 
 	/**
@@ -1598,7 +1605,7 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	 */
 	public function newQuery($excludeDeleted = true)
 	{
-		$builder = new Builder($this->newBaseQueryBuilder());
+		$builder = $this->newEloquentBuilder($this->newBaseQueryBuilder());
 
 		// Once we have the query builders, we will set the model instances so the
 		// builder can easily access any information it may need from the model
@@ -1621,6 +1628,17 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	public function newQueryWithDeleted()
 	{
 		return $this->newQuery(false);
+	}
+
+	/**
+	 * Create a new Eloquent query builder for the model.
+	 *
+	 * @param  \Illuminate\Database\Query\Builder $query
+	 * @return \Illuminate\Database\Eloquent\Builder|static
+	 */
+	public function newEloquentBuilder($query)
+	{
+		return new Builder($query);
 	}
 
 	/**
@@ -2782,7 +2800,7 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	public function __isset($key)
 	{
 		return ((isset($this->attributes[$key]) || isset($this->relations[$key])) ||
-			    ($this->hasGetMutator($key) && ! is_null($this->getAttributeValue($key))));
+				($this->hasGetMutator($key) && ! is_null($this->getAttributeValue($key))));
 	}
 
 	/**
