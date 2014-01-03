@@ -5,6 +5,7 @@ use DateTime;
 use Illuminate\Support\Fluent;
 use Illuminate\Support\MessageBag;
 use Illuminate\Container\Container;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -260,9 +261,11 @@ class Validator implements MessageProviderInterface {
 
 		$validatable = $this->isValidatable($rule, $attribute, $value);
 
-		$method = "validate{$rule}";
+		$expected = !Str::startsWith($rule, '!');
 
-		if ($validatable && ! $this->$method($attribute, $value, $parameters, $this))
+		$method = "validate" . substr($rule, !$expected);
+
+		if ($validatable && $this->$method($attribute, $value, $parameters, $this) != $expected)
 		{
 			$this->addFailure($attribute, $rule, $parameters);
 		}
