@@ -1300,8 +1300,6 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 	 */
 	protected function finishSave(array $options)
 	{
-		$this->syncOriginal();
-
 		$this->fireModelEvent('saved', false);
 
 		if (array_get($options, 'touch', true)) $this->touchOwners();
@@ -1342,6 +1340,7 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 			// models are updated, giving them a chance to do any special processing.
 			$this->setKeysForSaveQuery($query)->update($dirty);
 
+            $this->syncOriginal();
 			$this->fireModelEvent('updated', false);
 		}
 
@@ -1388,6 +1387,7 @@ abstract class Model implements ArrayAccess, ArrayableInterface, JsonableInterfa
 		// the created event is fired, just in case the developer tries to update it
 		// during the event. This will allow them to do so and run an update here.
 		$this->exists = true;
+        $this->syncOriginal();
 
 		$this->fireModelEvent('created', false);
 
